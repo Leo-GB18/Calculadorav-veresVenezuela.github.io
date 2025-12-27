@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Víveres</title>
+    <style>
+        :root {
+            --danger: #ff4757;
+            --success: #2ed573;
+            --primary: #2f3542;
+            --accent: #1e90ff;
+            --bg: #f1f2f6;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: white; padding: 1.5rem; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 550px; }
+        
+        h2 { text-align: center; color: var(--primary); margin-bottom: 20px; font-size: 1.4rem; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.8rem; color: #57606f; font-weight: 700; text-transform: uppercase; }
+
+        input {
+            width: 100%; padding: 10px; border: 2px solid #dfe4ea; border-radius: 12px;
+            box-sizing: border-box; font-size: 0.9rem; transition: 0.3s;
+        }
+        input:focus { border-color: var(--accent); outline: none; }
+
+        /* Contenedor de dos columnas para las calculadoras */
+        .calculadoras-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+
+        .calculator-section { background: #f8f9fa; padding: 12px; border-radius: 15px; border: 1px solid #ced4da; }
+        .controls { display: flex; gap: 5px; margin-bottom: 8px; }
+        
+        .btn { border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 900; font-size: 1rem; transition: 0.2s; padding: 8px; }
+        .btn-plus { background: var(--success); flex: 1; }
+        .btn-minus { background: var(--danger); flex: 1; }
+
+        .list-container { background: white; border-radius: 8px; border: 1px solid #eee; max-height: 80px; overflow-y: auto; margin-top: 8px; }
+        .item { display: flex; justify-content: space-between; padding: 5px 8px; border-bottom: 1px solid #f1f2f6; font-size: 0.75rem; }
+        .btn-del { background: none; border: none; color: #a4b0be; cursor: pointer; }
+
+        .sub-total { font-size: 0.8rem; font-weight: bold; margin-top: 5px; display: block; text-align: right; }
+
+        /* Cuadro de Deuda/Sobrante */
+        .visual-gasto {
+            background: var(--primary); color: white; padding: 20px; border-radius: 15px;
+            margin: 15px 0; text-align: center;
+        }
+        .gasto-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+        .gasto-monto { font-size: 1.8rem; font-weight: 800; display: block; margin: 5px 0; }
+        
+        .sobrante-badge {
+            display: inline-block; background: rgba(46, 213, 115, 0.2);
+            padding: 8px 15px; border-radius: 10px; border: 1px solid var(--success); margin-top: 5px;
+        }
+        .sobrante-text { font-size: 0.9rem; font-weight: bold; color: var(--success); display: block; }
+        .sobrante-local { font-size: 0.75rem; color: #bdf6d5; display: block; }
+
+        .falta-text { color: var(--danger); font-weight: bold; font-size: 0.9rem; }
+
+        .result-box { text-align: center; padding: 1.2rem; background: #e3f9e5; border-radius: 20px; border: 2px solid var(--success); }
+        .res-usd { display: block; font-size: 2.2rem; font-weight: 900; color: #1b8e3d; }
+        .res-local { font-weight: 600; color: #2f3542; display: block; border-top: 1px solid rgba(0,0,0,0.1); margin-top: 10px; padding-top: 10px; font-size: 0.9rem; }
+
+        .negativo { color: var(--danger) !important; }
+        .bg-negativo { background: #fff5f5 !important; border-color: var(--danger) !important; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Calculadora Al cambio</h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+        <div class="input-group">
+            <label>Tasa del Dia</label>
+            <input type="number" id="rate" value="1" step="any">
+        </div>
+        <div class="input-group">
+            <label>Tus USD($)</label>
+            <input type="number" id="usd-main" placeholder="Total USD">
+        </div>
+    </div>
+
+    <div class="calculadoras-grid">
+        <div class="calculator-section" style="border-color: var(--accent);">
+            <label style="color: var(--accent)">Sumar Dólares ($)</label>
+            <div class="controls">
+                <input type="number" id="temp-usd" placeholder="0.00">
+                <button class="btn btn-plus" style="background: var(--accent)" onclick="actionUSD(1)">+</button>
+                <button class="btn btn-minus" onclick="actionUSD(-1)">-</button>
+            </div>
+            <div class="list-container" id="list-usd"></div>
+            <span class="sub-total" style="color: var(--accent)">Total: $<span id="total-usd-sum">0.00</span></span>
+        </div>
+
+        <div class="calculator-section">
+            <label>Gastos BS</label>
+            <div class="controls">
+                <input type="number" id="temp-val" placeholder="0.00">
+                <button class="btn btn-plus" onclick="actionLocal(1)">+</button>
+                <button class="btn btn-minus" onclick="actionLocal(-1)">-</button>
+            </div>
+            <div class="list-container" id="list-local"></div>
+            <span class="sub-total" style="color: var(--danger)">Total: <span id="total-local-sum">0.00</span></span>
+        </div>
+    </div>
+
+    <div class="visual-gasto" id="gasto-box">
+        <span class="gasto-label">Estado de la Operación</span>
+        <span class="gasto-monto" id="view-local-debt">0.00 BS</span>
+        <div id="status-container"></div>
+    </div>
+
+    <div class="result-box" id="result-box">
+        <span class="gasto-label" style="color:#2f3542">Resultado</span>
+        <span class="res-usd" id="res-usd">$ 0.00 USD</span>
+        <span class="res-local" id="res-local">≈ 0.00 BS</span>
+    </div>
+</div>
+
+<script>
+    let entriesLocal = [];
+    let entriesUSD = [];
+    
+    const rateInp = document.getElementById('rate');
+    const mainInp = document.getElementById('usd-main');
+    const tempInpLocal = document.getElementById('temp-val');
+    const tempInpUSD = document.getElementById('temp-usd');
+
+    function actionLocal(sign) {
+        const val = parseFloat(tempInpLocal.value);
+        if (val) { entriesLocal.push(val * sign); tempInpLocal.value = ''; update(); }
+    }
+
+    function actionUSD(sign) {
+        const val = parseFloat(tempInpUSD.value);
+        if (val) { entriesUSD.push(val * sign); tempInpUSD.value = ''; update(); }
+    }
+
+    function removeLocal(i) { entriesLocal.splice(i, 1); update(); }
+    function removeUSD(i) { entriesUSD.splice(i, 1); update(); }
+
+    function update() {
+        const rate = parseFloat(rateInp.value) || 0;
+        const capitalBaseUSD = parseFloat(mainInp.value) || 0;
+        
+        const totalLocal = entriesLocal.reduce((a, b) => a + b, 0);
+        const totalUSDAdded = entriesUSD.reduce((a, b) => a + b, 0);
+        
+        // Convertir la suma de dólares añadidos a moneda local
+        const extraLocal = totalUSDAdded * rate;
+        const diffLocal = totalLocal - extraLocal;
+        const statusContainer = document.getElementById('status-container');
+        
+        let debtToSubtractFromMain = 0;
+
+        if (diffLocal > 0) {
+            debtToSubtractFromMain = rate > 0 ? diffLocal / rate : 0;
+            statusContainer.innerHTML = `<span class="falta-text">${debtToSubtractFromMain.toFixed(2)} USD</span>`;
+        } else if (totalLocal > 0 || totalUSDAdded > 0) {
+            const changeUSD = rate > 0 ? Math.abs(diffLocal) / rate : 0;
+            statusContainer.innerHTML = `
+                <div class="sobrante-badge">
+                    <span class="sobrante-text">Sobrante: $${changeUSD.toFixed(2)}</span>
+                    <span class="sobrante-local">≈ ${Math.abs(diffLocal).toLocaleString()} Local</span>
+                </div>`;
+            debtToSubtractFromMain = 0;
+        } else {
+            statusContainer.innerHTML = "";
+        }
+
+        const finalUSD = capitalBaseUSD - debtToSubtractFromMain;
+
+        // Render Listas
+        document.getElementById('list-local').innerHTML = entriesLocal.map((n, i) => `
+            <div class="item"><span>${n > 0 ? '▲' : '▼'} ${Math.abs(n)}</span><button class="btn-del" onclick="removeLocal(${i})">✕</button></div>`).join('');
+        
+        document.getElementById('list-usd').innerHTML = entriesUSD.map((n, i) => `
+            <div class="item"><span>${n > 0 ? '▲' : '▼'} $${Math.abs(n)}</span><button class="btn-del" onclick="removeUSD(${i})">✕</button></div>`).join('');
+
+        // Totales Visuales
+        document.getElementById('total-usd-sum').textContent = totalUSDAdded.toFixed(2);
+        document.getElementById('total-local-sum').textContent = totalLocal.toLocaleString();
+        document.getElementById('view-local-debt').textContent = totalLocal.toLocaleString() + " BS";
+        document.getElementById('res-usd').textContent = `$ ${finalUSD.toLocaleString(undefined, {minimumFractionDigits:2})} USD`;
+        document.getElementById('res-local').textContent = `≈ ${(finalUSD * rate).toLocaleString()} BS`;
+
+        const box = document.getElementById('result-box');
+        if(finalUSD < 0) {
+            box.classList.add('bg-negativo');
+            document.getElementById('res-usd').classList.add('negativo');
+        } else {
+            box.classList.remove('bg-negativo');
+            document.getElementById('res-usd').classList.remove('negativo');
+        }
+    }
+
+    [rateInp, mainInp].forEach(el => el.addEventListener('input', update));
+    update();
+</script>
+
+</body>
+</html>
