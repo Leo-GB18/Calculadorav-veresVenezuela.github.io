@@ -14,7 +14,7 @@
         }
 
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; margin: 0; }
-        .card { background: white; padding: 1.5rem; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 550px; }
+        .card { background: white; padding: 1.5rem; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 550px; position: relative; }
         
         h2 { text-align: center; color: var(--primary); margin-bottom: 20px; font-size: 1.4rem; }
         .input-group { margin-bottom: 12px; }
@@ -65,11 +65,107 @@
 
         .negativo { color: var(--danger) !important; }
         .bg-negativo { background: #fff5f5 !important; border-color: var(--danger) !important; }
+
+        /* Botón para abrir la calculadora básica */
+        .open-calculator-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Modal para la calculadora básica */
+        .calculator-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .calculator-modal.show {
+            display: flex;
+        }
+        .calculator-modal-content {
+            background: #ecf0f3;
+            padding: 20px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 300px;
+            width: 90%;
+            position: relative;
+        }
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* Estilos de la calculadora básica integrados */
+        .calculator-modal .calculator {
+            background-color: #ecf0f3;
+            padding: 15px;
+            border-radius: 30px;
+            box-shadow: inset 5px 5px 12px #ffffff, 5px 5px 12px rgba(0, 0, 0, .16);
+            display: grid;
+            grid-template-columns: repeat(4, 68px);
+        }
+        .calculator-modal input {
+            grid-column: span 4;
+            height: 70px;
+            width: 260px;
+            background-color: #ecf0f3;
+            box-shadow: inset -5px -5px 12px #ffffff, inset 5px 5px 12px rgba(0, 0, 0, .16);
+            border: none;
+            border-radius: 30px;
+            color: rgb(70, 70, 70);
+            font-size: 50px;
+            text-align: end;
+            margin-top: 40px;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+        .calculator-modal button {
+            height: 48px;
+            width: 48px;
+            background-color: #ecf0f3;
+            box-shadow: -5px -5px 12px #ffffff, 5px 5px 12px rgba(0, 0, 0, .16);
+            border: none;
+            border-radius: 50%;
+            margin: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .calculator-modal .equal {
+            width: 115px;
+            border-radius: 40px;
+            background-color: #ecf0f3;
+            box-shadow: -5px -5px 12px #ffffff, 5px 5px 12px rgba(0, 0, 0, .16);
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <button class="open-calculator-btn" onclick="openCalculator()">🧮</button>
     <h2>Calculadora Al cambio</h2>
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
@@ -117,6 +213,35 @@
         <span class="gasto-label" style="color:#2f3542">Resultado</span>
         <span class="res-usd" id="res-usd">$ 0.00 USD</span>
         <span class="res-local" id="res-local">≈ 0.00 BS</span>
+    </div>
+</div>
+
+<!-- Modal para la calculadora básica -->
+<div class="calculator-modal" id="calculator-modal">
+    <div class="calculator-modal-content">
+        <button class="close-modal" onclick="closeCalculator()">×</button>
+        <div class="calculator">
+            <input type="text" placeholder="0" id="output-screen">
+            <button onclick="clr()">CL</button>
+            <button onclick="del()">DEL</button>
+            <button onclick="display('%')">%</button>
+            <button onclick="display('/')">/</button>
+            <button onclick="display('7')">7</button>
+            <button onclick="display('8')">8</button>
+            <button onclick="display('9')">9</button>
+            <button onclick="display('*')">*</button>
+            <button onclick="display('4')">4</button>
+            <button onclick="display('5')">5</button>
+            <button onclick="display('6')">6</button>
+            <button onclick="display('-')">-</button>
+            <button onclick="display('1')">1</button>
+            <button onclick="display('2')">2</button>
+            <button onclick="display('3')">3</button>
+            <button onclick="display('+')">+</button>
+            <button onclick="display('.')">.</button>
+            <button onclick="display('0')">0</button>
+            <button onclick="calculate()" class="equal">=</button>
+        </div>
     </div>
 </div>
 
@@ -199,6 +324,38 @@
 
     [rateInp, mainInp].forEach(el => el.addEventListener('input', update));
     update();
+
+    // Funciones para la calculadora básica
+    let outputscreen = document.getElementById('output-screen');
+
+    function display(num) {
+        outputscreen.value += num;
+    }
+
+    function calculate() {
+        try {
+            outputscreen.value = eval(outputscreen.value);
+        } catch (err) {
+            alert("Invalid");
+        }
+    }
+
+    function clr() {
+        outputscreen.value = '';
+    }
+
+    function del() {
+        outputscreen.value = outputscreen.value.slice(0, -1);
+    }
+
+    // Funciones para el modal
+    function openCalculator() {
+        document.getElementById('calculator-modal').classList.add('show');
+    }
+
+    function closeCalculator() {
+        document.getElementById('calculator-modal').classList.remove('show');
+    }
 </script>
 
 </body>
